@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/xtls/xray-core/app/stats"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -114,6 +115,9 @@ Start:
 		if inbound != nil {
 			inbound.User.Email = user
 		}
+	}
+	if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+		stats.ConnectionCounter.AddConnection(inbound.User.Email, stats.GetAddrIP(conn.RemoteAddr()))
 	}
 
 	newError("request to Method [", request.Method, "] Host [", request.Host, "] with URL [", request.URL, "]").WriteToLog(session.ExportIDToError(ctx))

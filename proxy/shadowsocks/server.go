@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/xtls/xray-core/app/stats"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/log"
@@ -205,6 +206,10 @@ func (s *Server) handleConnection(ctx context.Context, conn stat.Connection, dis
 		panic("no inbound metadata")
 	}
 	inbound.User = request.User
+
+	if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+		stats.ConnectionCounter.AddConnection(inbound.User.Email, stats.GetAddrIP(conn.RemoteAddr()))
+	}
 
 	dest := request.Destination()
 	ctx = log.ContextWithAccessMessage(ctx, &log.AccessMessage{

@@ -25,6 +25,7 @@ type StatsServiceClient interface {
 	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
 	QueryStats(ctx context.Context, in *QueryStatsRequest, opts ...grpc.CallOption) (*QueryStatsResponse, error)
 	GetSysStats(ctx context.Context, in *SysStatsRequest, opts ...grpc.CallOption) (*SysStatsResponse, error)
+	GetUserConnections(ctx context.Context, in *GetUserConnectionsRequest, opts ...grpc.CallOption) (*GetUserConnectionsResponse, error)
 }
 
 type statsServiceClient struct {
@@ -62,6 +63,15 @@ func (c *statsServiceClient) GetSysStats(ctx context.Context, in *SysStatsReques
 	return out, nil
 }
 
+func (c *statsServiceClient) GetUserConnections(ctx context.Context, in *GetUserConnectionsRequest, opts ...grpc.CallOption) (*GetUserConnectionsResponse, error) {
+	out := new(GetUserConnectionsResponse)
+	err := c.cc.Invoke(ctx, "/xray.app.stats.command.StatsService/GetUserConnections", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StatsServiceServer is the server API for StatsService service.
 // All implementations must embed UnimplementedStatsServiceServer
 // for forward compatibility
@@ -69,6 +79,7 @@ type StatsServiceServer interface {
 	GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
 	QueryStats(context.Context, *QueryStatsRequest) (*QueryStatsResponse, error)
 	GetSysStats(context.Context, *SysStatsRequest) (*SysStatsResponse, error)
+	GetUserConnections(context.Context, *GetUserConnectionsRequest) (*GetUserConnectionsResponse, error)
 	mustEmbedUnimplementedStatsServiceServer()
 }
 
@@ -84,6 +95,9 @@ func (UnimplementedStatsServiceServer) QueryStats(context.Context, *QueryStatsRe
 }
 func (UnimplementedStatsServiceServer) GetSysStats(context.Context, *SysStatsRequest) (*SysStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSysStats not implemented")
+}
+func (UnimplementedStatsServiceServer) GetUserConnections(context.Context, *GetUserConnectionsRequest) (*GetUserConnectionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserConnections not implemented")
 }
 func (UnimplementedStatsServiceServer) mustEmbedUnimplementedStatsServiceServer() {}
 
@@ -152,6 +166,24 @@ func _StatsService_GetSysStats_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StatsService_GetUserConnections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserConnectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StatsServiceServer).GetUserConnections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/xray.app.stats.command.StatsService/GetUserConnections",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StatsServiceServer).GetUserConnections(ctx, req.(*GetUserConnectionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StatsService_ServiceDesc is the grpc.ServiceDesc for StatsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +202,10 @@ var StatsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSysStats",
 			Handler:    _StatsService_GetSysStats_Handler,
+		},
+		{
+			MethodName: "GetUserConnections",
+			Handler:    _StatsService_GetUserConnections_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

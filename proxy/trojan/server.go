@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	app_stats "github.com/xtls/xray-core/app/stats"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -230,6 +231,10 @@ func (s *Server) Process(ctx context.Context, network net.Network, conn stat.Con
 	}
 	inbound.User = user
 	sessionPolicy = s.policyManager.ForLevel(user.Level)
+
+	if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+		app_stats.ConnectionCounter.AddConnection(inbound.User.Email, app_stats.GetAddrIP(conn.RemoteAddr()))
+	}
 
 	if destination.Network == net.Network_UDP { // handle udp request
 		return s.handleUDPPayload(ctx, &PacketReader{Reader: clientReader}, &PacketWriter{Writer: conn}, dispatcher)

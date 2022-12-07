@@ -101,6 +101,12 @@ func (s *statsServer) GetSysStats(ctx context.Context, request *SysStatsRequest)
 	return response, nil
 }
 
+func (s *statsServer) GetUserConnections(ctx context.Context, request *GetUserConnectionsRequest) (*GetUserConnectionsResponse, error) {
+	return &GetUserConnectionsResponse{
+		Host: stats.ConnectionCounter.Get(request.Name),
+	}, nil
+}
+
 func (s *statsServer) mustEmbedUnimplementedStatsServiceServer() {}
 
 type service struct {

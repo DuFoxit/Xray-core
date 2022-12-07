@@ -46,10 +46,19 @@ message SysStatsResponse {
   uint32 Uptime = 10;
 }
 
+message GetUserConnectionsRequest{
+    string name = 1;
+}
+
+message GetUserConnectionsResponse{
+    repeated string host = 1;
+}
+
 service StatsService {
   rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {}
   rpc QueryStats(QueryStatsRequest) returns (QueryStatsResponse) {}
   rpc GetSysStats(SysStatsRequest) returns (SysStatsResponse) {}
+  rpc GetUserConnections(GetUserConnectionsRequest) returns (GetUserConnectionsResponse) {}
 }
 
 message Config {}

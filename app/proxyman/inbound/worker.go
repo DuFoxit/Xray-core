@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/xtls/xray-core/app/proxyman"
+	app_stats "github.com/xtls/xray-core/app/stats"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/net"
@@ -109,6 +110,11 @@ func (w *tcpWorker) callback(conn stat.Connection) {
 	}
 	cancel()
 	conn.Close()
+
+	inbound := session.InboundFromContext(ctx)
+	if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+		app_stats.ConnectionCounter.DelConnection(inbound.User.Email, app_stats.GetAddrIP(conn.RemoteAddr()))
+	}
 }
 
 func (w *tcpWorker) Proxy() proxy.Inbound {
@@ -335,6 +341,11 @@ func (w *udpWorker) callback(b *buf.Buffer, source net.Destination, originalDest
 				conn.setInactive()
 				w.removeConn(id)
 			}
+
+			inbound := session.InboundFromContext(ctx)
+			if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+				app_stats.ConnectionCounter.DelConnection(inbound.User.Email, app_stats.GetAddrIP(conn.RemoteAddr()))
+			}
 		}()
 	}
 }
@@ -484,6 +495,11 @@ func (w *dsWorker) callback(conn stat.Connection) {
 	cancel()
 	if err := conn.Close(); err != nil {
 		newError("failed to close connection").Base(err).WriteToLog(session.ExportIDToError(ctx))
+	}
+
+	inbound := session.InboundFromContext(ctx)
+	if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+		app_stats.ConnectionCounter.DelConnection(inbound.User.Email, app_stats.GetAddrIP(conn.RemoteAddr()))
 	}
 }
 

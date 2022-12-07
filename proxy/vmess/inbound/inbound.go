@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/xtls/xray-core/app/stats"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -288,6 +289,10 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		panic("no inbound metadata")
 	}
 	inbound.User = request.User
+
+	if inbound != nil && inbound.User != nil && inbound.User.Email != "" {
+		stats.ConnectionCounter.AddConnection(inbound.User.Email, stats.GetAddrIP(connection.RemoteAddr()))
+	}
 
 	sessionPolicy = h.policyManager.ForLevel(request.User.Level)
 
