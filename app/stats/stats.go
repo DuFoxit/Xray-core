@@ -9,6 +9,7 @@ import (
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/features/stats"
+	"golang.org/x/time/rate"
 )
 
 // Manager is an implementation of stats.Manager.
@@ -16,6 +17,7 @@ type Manager struct {
 	access   sync.RWMutex
 	counters map[string]*Counter
 	channels map[string]*Channel
+	limiters map[string]*rate.Limiter
 	running  bool
 }
 
@@ -24,6 +26,7 @@ func NewManager(ctx context.Context, config *Config) (*Manager, error) {
 	m := &Manager{
 		counters: make(map[string]*Counter),
 		channels: make(map[string]*Channel),
+		limiters: make(map[string]*rate.Limiter),
 	}
 
 	return m, nil
@@ -120,6 +123,41 @@ func (m *Manager) GetChannel(name string) stats.Channel {
 
 	if c, found := m.channels[name]; found {
 		return c
+	}
+	return nil
+}
+
+func (m *Manager) RegisterLimiter(name string) (*rate.Limiter, error) {
+	m.access.Lock()
+	defer m.access.Unlock()
+
+	if _, found := m.limiters[name]; found {
+		return nil, newError("Limiter ", name, " already registered.")
+	}
+	newError("create new limiter ", name).AtDebug().WriteToLog()
+	var maxRate int = 20 * 1000 * 1000
+	l := rate.NewLimiter(rate.Limit(maxRate), maxRate)
+	m.limiters[name] = l
+	return l, nil
+}
+
+func (m *Manager) UnregisterLimiter(name string) error {
+	m.access.Lock()
+	defer m.access.Unlock()
+
+	if _, found := m.limiters[name]; found {
+		newError("remove limiter ", name).AtDebug().WriteToLog()
+		delete(m.limiters, name)
+	}
+	return nil
+}
+
+func (m *Manager) GetLimiter(name string) *rate.Limiter {
+	m.access.RLock()
+	defer m.access.RUnlock()
+
+	if l, found := m.limiters[name]; found {
+		return l
 	}
 	return nil
 }

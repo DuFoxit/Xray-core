@@ -1,18 +1,29 @@
 package dispatcher
 
 import (
+	"context"
+
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/features/stats"
+	"golang.org/x/time/rate"
 )
 
 type SizeStatWriter struct {
+	Limiter *rate.Limiter
 	Counter stats.Counter
 	Writer  buf.Writer
 }
 
 func (w *SizeStatWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
-	w.Counter.Add(int64(mb.Len()))
+	if w.Counter != nil {
+		w.Counter.Add(int64(mb.Len()))
+	}
+	if w.Limiter != nil {
+		if err := w.Limiter.WaitN(context.Background(), int(mb.Len()*8)); err != nil {
+			return err
+		}
+	}
 	return w.Writer.WriteMultiBuffer(mb)
 }
 

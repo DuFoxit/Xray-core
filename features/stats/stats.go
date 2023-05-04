@@ -7,6 +7,7 @@ import (
 
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/features"
+	"golang.org/x/time/rate"
 )
 
 // Counter is the interface for stats counters.
@@ -77,6 +78,10 @@ type Manager interface {
 	UnregisterChannel(string) error
 	// GetChannel returns a channel by its identifier.
 	GetChannel(string) Channel
+
+	RegisterLimiter(string) (*rate.Limiter, error)
+	UnregisterLimiter(string) error
+	GetLimiter(string) *rate.Limiter
 }
 
 // GetOrRegisterCounter tries to get the StatCounter first. If not exist, it then tries to create a new counter.
@@ -97,6 +102,15 @@ func GetOrRegisterChannel(m Manager, name string) (Channel, error) {
 	}
 
 	return m.RegisterChannel(name)
+}
+
+func GetOrRegisterLimiter(m Manager, name string) (*rate.Limiter, error) {
+	limiter := m.GetLimiter(name)
+	if limiter != nil {
+		return limiter, nil
+	}
+
+	return m.RegisterLimiter(name)
 }
 
 // ManagerType returns the type of Manager interface. Can be used to implement common.HasType.
@@ -141,6 +155,18 @@ func (NoopManager) UnregisterChannel(string) error {
 
 // GetChannel implements Manager.
 func (NoopManager) GetChannel(string) Channel {
+	return nil
+}
+
+func (NoopManager) RegisterLimiter(string) (*rate.Limiter, error) {
+	return nil, newError("not implemented")
+}
+
+func (NoopManager) UnregisterLimiter(string) error {
+	return nil
+}
+
+func (NoopManager) GetLimiter(string) *rate.Limiter {
 	return nil
 }
 
